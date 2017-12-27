@@ -43,12 +43,23 @@ function jsonValid(text){
 		return false;
 	}
 }
-function getPostData(dataString){
-	fields = jsonValid(dataString);
-	if(fields){
-		postType = 'json';
-	}else if(dataString.indexOf('&') > -1){
-		postType = 'form-data';
+function getContenType(dataString){
+	isJson = jsonValid(dataString);
+	if (isJson){
+		contentType = 'application/json';
+	}else if(dataString.indexOf('Content-Disposition: form-data; name=') > -1){
+		contentType = 'multipart/form-data; boundary="boundary"';
+	}else if(dataString.indexOf('&') > -1 || dataString.indexOf('=') > -1){
+		contentType = 'application/x-www-form-urlencoded';
+	}else{
+		contentType = 'text/xml';
+	}
+	return contentType;
+}
+
+function getFieldFormData(dataString){
+	var fields = false;
+	if(dataString.indexOf('&') > -1){
 		dataString = dataString.replace( new RegExp(/\n|\r/g), '' );
 		dataString = dataString.replace( new RegExp(/\+/g), "%2B" );
 		dataString = dataString.replace(new RegExp(/\=\=/g),"%3d%3d"); // for bas64 cases
@@ -64,7 +75,6 @@ function getPostData(dataString){
 			}
 		}
 	}else if(dataString.indexOf('=') > -1){
-		postType = 'form-data';
 		dataString = dataString.replace( new RegExp(/\n|\r/g), '' );
 		dataString = dataString.replace( new RegExp(/\+/g), "%2B" );
 		fields = new Object();
@@ -74,10 +84,8 @@ function getPostData(dataString){
 		}else if(f.length == 3){
 			fields[f[0]] = f[1] + '%3d'
 		}
-	}else{
-		postType = 'raw';
 	}
-	return {raw: dataString, postType: postType, fields: fields}
+	return fields;
 }
 
 function urlEncode(inputstr)
@@ -175,13 +183,10 @@ function execute(){
 		if(!postDataField.value){
 			return;
 		}
-
-		var p = getPostData(postDataField.value);
-		// console.log(p)
-		var postType = p['postType'];
-		var fields = p['fields'];
-		var rawData = p['raw'];
-		if (postType == 'form-data'){
+		var postData = postDataField.value;
+		var contentType = getContenType(postData)
+		if(contentType == 'application/x-www-form-urlencoded'){
+			var fields = getFieldFormData(postData);
 			var post_script = 'document.body.innerHTML += \'<form id="post_form" action="'+ url +'" method="POST">';
 			for(f in fields){
 				post_script += '<input type="hidden" name="'+ f +'" value ="'+fields[f]+'" />'
@@ -202,15 +207,15 @@ function execute(){
 				method: "POST",
 				redirect: 'follow',
 				headers: {
-					'Content-Type': (postType == 'json' ? 'application/json' : 'application/x-www-form-urlencoded'),
+					'Content-Type': contentType,
 					'Cache': 'no-cache'
 				},
 				credentials: 'include',
-				body: rawData
+				body: postData
 			}).then(function(response) {
 				response.text().then(function (text) {
 					responsePost = text;
-					var post_script = 'document.body.innerHTML = unescape(\''+urlEncode(responsePost)+'\');window.history.pushState("", "", \''+url+'\');';
+					var post_script = 'document.body.innerHTML = (unescape(\''+ urlEncode(responsePost) +'\'));';
 					browser.runtime.sendMessage({
 						tabId: browser.devtools.inspectedWindow.tabId,
 						action: 'send_requests',
@@ -334,7 +339,6 @@ function onclickMenu(action){
 			txt = getSelectedText();
 			if(txt){
 				newString = jsonBeautify(txt);
-				console.log(newString);
 				if(newString){
 					this.setSelectedText(newString);
 				}
