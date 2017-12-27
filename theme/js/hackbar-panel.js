@@ -302,7 +302,7 @@ function onclickMenu(action){
 			txt = getSelectedText();
 			if(txt){
 				newString = Encrypt.base64Decode(txt);
-				if(newStringw){
+				if(newString){
 					this.setSelectedText(newString);
 				}
 			}

@@ -1,3 +1,6 @@
+# HackBar for Firefox Quantum
+A HackBar for new firefox (Firefox Quantum). This addon is writed in webextension and alternatives to the XUL version of origanal Hackbar.
+
 # How to use #
 * Press F12 to open hackbar
 # Feature #
