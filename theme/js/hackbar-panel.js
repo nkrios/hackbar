@@ -19,6 +19,8 @@ var urlDecodeBtn = document.querySelector('#url_decode_btn');
 var hexEncodeBtn = document.querySelector('#hex_encode_btn');
 var hexDecodeBtn = document.querySelector('#hex_decode_btn');
 var jsonifyBtn = document.querySelector('#jsonify_btn');
+var uppercaseBtn = document.querySelector('#uppercase_btn');
+var lowercaseBtn = document.querySelector('#lowercase_btn');
 // Block postdata and refrerrer
 var enablePostBtn = document.querySelector('#enable_post_btn');
 var enableReferrerBtn = document.querySelector('#enable_referrer_btn');
@@ -58,31 +60,17 @@ function getContenType(dataString){
 }
 
 function getFieldFormData(dataString){
-	var fields = false;
-	if(dataString.indexOf('&') > -1){
-		dataString = dataString.replace( new RegExp(/\n|\r/g), '' );
-		dataString = dataString.replace( new RegExp(/\+/g), "%2B" );
-		dataString = dataString.replace(new RegExp(/\=\=/g),"%3d%3d"); // for bas64 cases
-		dataString = dataString.replace(new RegExp(/\=\&/g),"%3d&");   // for bas64 cases
-		fields = new Object();
-		f_split = dataString.split('&');
-		for(i in f_split){
-			f = f_split[i].split('=');
-			if(f.length == 2){
-				fields[f[0]] = f[1]
-			}else if(f.length == 3){
-				fields[f[0]] = f[1] + '%3d'
-			}
-		}
-	}else if(dataString.indexOf('=') > -1){
-		dataString = dataString.replace( new RegExp(/\n|\r/g), '' );
-		dataString = dataString.replace( new RegExp(/\+/g), "%2B" );
-		fields = new Object();
-		f = dataString.split('=');
-		if(f.length == 2){
-			fields[f[0]] = f[1]
-		}else if(f.length == 3){
-			fields[f[0]] = f[1] + '%3d'
+	dataString = dataString.trim();
+	var fields = Array();
+	var item = new Object();
+	var f_split = dataString.split('&');
+
+	for (i in f_split){
+		var f = f_split[i].match(/(^.*?)=(.*)/);
+		if(f.length == 3){
+			item['name'] = f[1];
+			item['value'] = f[2];
+			fields.push(item);
 		}
 	}
 	return fields;
@@ -102,6 +90,12 @@ function jsonBeautify(inputstr){
 		return JSON.stringify(jsonString, null, 4);
 	}
 	return false;
+}
+function upperCaseString(inputstr){
+	return inputstr.toUpperCase();
+}
+function lowerCaseString(inputstr){
+	return inputstr.toLowerCase();
 }
 
 //on fucus listenner field
@@ -163,7 +157,7 @@ function execute(){
 	var url = urlField.value;
 	url = url.replace(new RegExp(/\n|\r/g), '');
 	url = url.trim();
-	if(!(new RegExp(/^(http:\/\/|https:\/\/|view-source:)/g)).test(url)){
+	if(!(new RegExp(/^(http:\/\/|https:\/\/|view-source:)/gi)).test(url)){
 		url = 'http://' + url;
 	}
 	if (!url){
@@ -184,51 +178,18 @@ function execute(){
 			return;
 		}
 		var postData = postDataField.value;
-		var contentType = getContenType(postData)
-		if(contentType == 'application/x-www-form-urlencoded'){
-			var fields = getFieldFormData(postData);
-			var post_script = 'document.body.innerHTML += \'<form id="post_form" action="'+ url +'" method="POST">';
-			for(f in fields){
-				post_script += '<input type="hidden" name="'+ f +'" value ="'+fields[f]+'" />'
-			}
-			post_script +='</form>\'; document.getElementById("post_form").submit();';
-			browser.runtime.sendMessage({
-				tabId: browser.devtools.inspectedWindow.tabId,
-				action: 'send_requests',
-				url: url,
-				method: 'POST',
-				script: post_script,
-				refrerrer: refrerrer,
-				user_agent: user_agent,
-				cookie: cookie
-			});
-		}else{
-			fetch(url, {
-				method: "POST",
-				redirect: 'follow',
-				headers: {
-					'Content-Type': contentType,
-					'Cache': 'no-cache'
-				},
-				credentials: 'include',
-				body: postData
-			}).then(function(response) {
-				response.text().then(function (text) {
-					responsePost = text;
-					var post_script = 'document.body.innerHTML = (unescape(\''+ urlEncode(responsePost) +'\'));';
-					browser.runtime.sendMessage({
-						tabId: browser.devtools.inspectedWindow.tabId,
-						action: 'send_requests',
-						url: url,
-						method: 'POST',
-						script: post_script,
-						refrerrer: refrerrer,
-						user_agent: user_agent,
-						cookie: cookie
-					});
-				});
-			});
-		}
+		var contentType = getContenType(postData);
+		browser.runtime.sendMessage({
+			tabId: browser.devtools.inspectedWindow.tabId,
+			action: 'send_requests',
+			url: url,
+			method: 'POST',
+			data: postData,
+			content_type : contentType,
+			refrerrer: refrerrer,
+			user_agent: user_agent,
+			cookie: cookie
+		});
 	}
 }
 
@@ -242,7 +203,6 @@ function getSelectedText ()
 			action: 'selected_text'
 		});
 		return false;
-		// return prompt( "No text was selected for the requested action", "String to use" );
 	} else {
 		return this.currentFocusField.value.substr( selectionStart, selectionEnd - selectionStart );
 	}
@@ -344,6 +304,24 @@ function onclickMenu(action){
 				}
 			}
 			break;
+		case 'uppercase':
+			txt = getSelectedText();
+			if(txt){
+				newString = upperCaseString(txt);
+				if(newString){
+					this.setSelectedText(newString);
+				}
+			}
+			break;
+		case 'lowercase':
+			txt = getSelectedText();
+			if(txt){
+				newString = lowerCaseString(txt);
+				if(newString){
+					this.setSelectedText(newString);
+				}
+			}
+			break;
 	}
 	currentFocusField.focus();
 }
@@ -369,6 +347,8 @@ urlDecodeBtn.addEventListener('click', () => onclickMenu('urldecode'));
 hexEncodeBtn.addEventListener('click', () => onclickMenu('hexencode'));
 hexDecodeBtn.addEventListener('click', () => onclickMenu('hexdecode'));
 jsonifyBtn.addEventListener('click', () => onclickMenu('jsonify'));
+uppercaseBtn.addEventListener('click', () => onclickMenu('uppercase'));
+lowercaseBtn.addEventListener('click', () => onclickMenu('lowercase'));
 
 // Keyboard listener
 window.addEventListener('keypress', function(event) {

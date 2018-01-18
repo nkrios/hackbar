@@ -28,10 +28,10 @@ function rewriteHeaders(e) {
 	if(refrerrer){
 		index_referer = isExistHeaders('referer', e.requestHeaders);
 		if(index_referer != -1){
-			e.requestHeaders[index_referer].value = refrerrer
+			e.requestHeaders[index_referer].value = refrerrer;
 		}else{
 			e.requestHeaders.push({
-			name: "Referer",
+				name: "Referer",
 				value: refrerrer
 			});
 		}
@@ -40,10 +40,10 @@ function rewriteHeaders(e) {
 	if(user_agent){
 		index_user_agent = isExistHeaders('user-agent', e.requestHeaders);
 		if(index_user_agent != -1){
-			e.requestHeaders[index_user_agent].value = user_agent
+			e.requestHeaders[index_user_agent].value = user_agent;
 		}else{
 			e.requestHeaders.push({
-			name: "User-Agent",
+				name: "User-Agent",
 				value: user_agent
 			});
 		}
@@ -52,15 +52,14 @@ function rewriteHeaders(e) {
 	if(cookie){
 		index_cookie = isExistHeaders('cookie', e.requestHeaders);
 		if(index_cookie != -1){
-			e.requestHeaders[index_cookie].value = cookie
+			e.requestHeaders[index_cookie].value = cookie;
 		}else{
 			e.requestHeaders.push({
-			name: "Cookie",
+				name: "Cookie",
 				value: cookie
 			});
 		}
 	}
-
 	browser.webRequest.onBeforeSendHeaders.removeListener(rewriteHeaders);
 	return {requestHeaders: e.requestHeaders};
 }
@@ -78,25 +77,56 @@ function handleMessage(request, sender, sendResponse) {
 			refrerrer = request.refrerrer;
 			user_agent = request.user_agent;
 			cookie = request.cookie;
-
+			content_type = request.content_type;
 			if(method == 'GET'){
-				browser.tabs.update(tabId, {url: url});
+				browser.tabs.update({url: url});
 			}else{
-				var post_script = request.script;
-				browser.tabs.executeScript(tabId, {code: post_script});
+				var post_data = request.data;
+				var content_type = request.content_type;
+				if(content_type == 'application/x-www-form-urlencoded'){
+					browser.tabs.executeScript(tabId, {code: 'var post_data = "'+ escape(post_data) +'"; var url = "'+ escape(url) +'"'}, function(){
+						browser.tabs.executeScript(tabId, {file: 'theme/js/post_form.js'});
+					});
+				}else{
+					var myHeaders = new Headers();
+					myHeaders.append("Content-Type", content_type);
+					myHeaders.append("Cache", "no-cache");
+					if(refrerrer){
+						myHeaders.append("Referer", refrerrer);
+					}
+					if(user_agent){
+						myHeaders.append("User-Agent", user_agent);
+					}
+					if(cookie){
+						myHeaders.append("Cookie", cookie);
+					}
+					fetch(url, {
+						method: "POST",
+						redirect: 'follow',
+						headers: myHeaders,
+						credentials: 'include',
+						body: post_data
+					}).then(function(response) {
+						response.text().then(function (responsePost) {
+							var code = 'document.body.innerHTML = (unescape("'+ escape(responsePost) +'"));';
+							browser.tabs.executeScript({code: code});
+						});
+					});
+				}
 			}
 			browser.webRequest.onBeforeSendHeaders.addListener(
 				rewriteHeaders,
 				{urls: ["<all_urls>"], types: ["main_frame"]},
 				["blocking", "requestHeaders"]
 			);
+			sendResponse({status: true});
 			break;
 		case 'load_url':
 			getCurrentTabUrl(sendResponse);
 			break;
 		case 'selected_text':
 			var code = 'alert( "No text was selected for this action");';
-			browser.tabs.executeScript(tabId, {code: code});
+			browser.tabs.executeScript({code: code});
 			break;
 	}
 	return true;

@@ -1,8 +1,13 @@
 #url_field, #post_data_field {
-	height: 100px;
 	width: 100%;
 	border: .1em solid #bbb;
 	transition: background-color .2s ease-out;
+}
+#post_data_field {
+	height: 100px;
+}
+#url_field{
+	height: 70px;
 }
 
 #url_field[contenteditable=true], #post_data_field[contenteditable=true] {
