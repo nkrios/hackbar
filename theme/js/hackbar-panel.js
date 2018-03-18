@@ -120,9 +120,11 @@ function loadUrl() {
 		action: 'load_url'
 	});
 	sending.then(function(message){
-		var currentTabUrl = message.url;
-		if (currentTabUrl){
-			urlField.value = currentTabUrl;
+		if (message.url){
+			urlField.value = message.url;
+		}
+		if (message.data && postDataField.value == "") {
+			postDataField.value = message.data;
 		}
 	});
 }

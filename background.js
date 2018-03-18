@@ -7,11 +7,31 @@ var refrerrer;
 var user_agent;
 var cookie;
 var method;
+var postDataCurrent;
+
+function getPostData(e) {
+	if ( e.method == "POST" && e.requestBody ) {
+		let rawData = e.requestBody.formData;
+		postDataCurrent = "";
+		for (let key in rawData) {
+			if (rawData.hasOwnProperty(key)) {
+				postDataCurrent = postDataCurrent + key + "=" + rawData[key] + "&";
+			}
+		}
+		postDataCurrent = postDataCurrent.slice(0,-1); // remove last &
+	}
+}
+
+browser.webRequest.onBeforeRequest.addListener(
+	getPostData,
+	{urls: ["<all_urls>"], types: ["main_frame"]},
+	["requestBody"]
+);
 
 function getCurrentTabUrl(sendResponse){
 	browser.tabs.query({active:true, currentWindow:true}).then(tabs => {
 		currentTabUrl = tabs[0].url;
-		sendResponse({url: currentTabUrl});
+		sendResponse({url: currentTabUrl, data: postDataCurrent});
 	});
 }
 function isExistHeaders(name, requestHeaders){
