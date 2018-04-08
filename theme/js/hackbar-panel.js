@@ -102,6 +102,8 @@ function lowerCaseString(inputstr){
 urlField.addEventListener('click', onFocusListener, false);
 postDataField.addEventListener('click', onFocusListener, false);
 referrerField.addEventListener('click', onFocusListener, false);
+userAgentField.addEventListener('click', onFocusListener, false);
+cookieField.addEventListener('click', onFocusListener, false);
 
 // toggle element
 function toggleElement(elementBtn, elementBlock){
