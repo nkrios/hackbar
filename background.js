@@ -97,42 +97,14 @@ function handleMessage(request, sender, sendResponse) {
 			refrerrer = request.refrerrer;
 			user_agent = request.user_agent;
 			cookie = request.cookie;
-			content_type = request.content_type;
+			//content_type = request.content_type;
 			if(method == 'GET'){
 				browser.tabs.update({url: url});
 			}else{
 				var post_data = request.data;
-				var content_type = request.content_type;
-				if(content_type == 'application/x-www-form-urlencoded'){
-					browser.tabs.executeScript(tabId, {code: 'var post_data = "'+ escape(post_data) +'"; var url = "'+ escape(url) +'"'}, function(){
-						browser.tabs.executeScript(tabId, {file: 'theme/js/post_form.js'});
-					});
-				}else{
-					var myHeaders = new Headers();
-					myHeaders.append("Content-Type", content_type);
-					myHeaders.append("Cache", "no-cache");
-					if(refrerrer){
-						myHeaders.append("Referer", refrerrer);
-					}
-					if(user_agent){
-						myHeaders.append("User-Agent", user_agent);
-					}
-					if(cookie){
-						myHeaders.append("Cookie", cookie);
-					}
-					fetch(url, {
-						method: "POST",
-						redirect: 'follow',
-						headers: myHeaders,
-						credentials: 'include',
-						body: post_data
-					}).then(function(response) {
-						response.text().then(function (responsePost) {
-							var code = 'document.body.innerHTML = (unescape("'+ escape(responsePost) +'"));';
-							browser.tabs.executeScript({code: code});
-						});
-					});
-				}
+				browser.tabs.executeScript(tabId, {code: 'var post_data = "'+ escape(post_data) +'"; var url = "'+ escape(url) +'"'}, function(){
+					browser.tabs.executeScript(tabId, {file: 'theme/js/post_form.js'});
+				});
 			}
 			browser.webRequest.onBeforeSendHeaders.addListener(
 				rewriteHeaders,

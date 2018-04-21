@@ -140,7 +140,6 @@ function splitUrl(){
 }
 
 function execute(){
-	//url, referer, user_agent, cookie
 	var refrerrer = null;
 	var user_agent = null;
 	var cookie = null;
@@ -182,14 +181,14 @@ function execute(){
 			return;
 		}
 		var postData = postDataField.value;
-		var contentType = getContenType(postData);
+		//var contentType = getContenType(postData);
 		browser.runtime.sendMessage({
 			tabId: browser.devtools.inspectedWindow.tabId,
 			action: 'send_requests',
 			url: url,
 			method: 'POST',
 			data: postData,
-			content_type : contentType,
+			//content_type : contentType,
 			refrerrer: refrerrer,
 			user_agent: user_agent,
 			cookie: cookie
