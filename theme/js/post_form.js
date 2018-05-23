@@ -7,13 +7,23 @@ function getFieldFormData(dataString){
 		if(f.length == 3){
 			var item = new Object();
 			item['name'] = f[1];
-			item['value'] = unescape(f[2]);
+			item['value'] = f[2];
 			fields.push(item);
 		}
 	}
 	return fields;
 }
-var fields = getFieldFormData(unescape(post_data));
+
+function htmlUnescape(inputstr){
+    return inputstr
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&');
+}
+
+var fields = getFieldFormData(htmlUnescape(post_data));
 
 var form = document.createElement("form");
 form.setAttribute("method", "post");

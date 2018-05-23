@@ -9,6 +9,15 @@ var cookie;
 var method;
 var postDataCurrent;
 
+function htmlEscape(inputstr) {
+    return inputstr
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 function getPostData(e) {
 	if ( e.method == "POST" && e.requestBody ) {
 		let rawData = e.requestBody.formData;
@@ -102,7 +111,7 @@ function handleMessage(request, sender, sendResponse) {
 				browser.tabs.update({url: url});
 			}else{
 				var post_data = request.data;
-				browser.tabs.executeScript(tabId, {code: 'var post_data = "'+ escape(post_data) +'"; var url = "'+ escape(url) +'"'}, function(){
+				browser.tabs.executeScript(tabId, {code: 'var post_data = "'+ htmlEscape(post_data) +'"; var url = "'+ encodeURIComponent(url) +'"'}, function(){
 					browser.tabs.executeScript(tabId, {file: 'theme/js/post_form.js'});
 				});
 			}

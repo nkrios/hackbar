@@ -78,12 +78,9 @@ function getFieldFormData(dataString){
 
 function urlEncode(inputstr)
 {
-	var newString = escape(inputstr);
-	newString = newString.replace(/\*/g,'%2a');
-	newString = newString.replace(/\//g,'%2f');
-	newString = newString.replace(/\+/g,'%2b');
-	return newString;
+	return encodeURIComponent(inputstr).toLowerCase();
 }
+
 function jsonBeautify(inputstr){
 	var jsonString = jsonValid(inputstr);
 	if(jsonString){
