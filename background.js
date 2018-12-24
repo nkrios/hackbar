@@ -43,6 +43,7 @@ function getCurrentTabUrl(sendResponse){
 		sendResponse({url: currentTabUrl, data: postDataCurrent});
 	});
 }
+
 function isExistHeaders(name, requestHeaders){
 	for(i=0; i< requestHeaders.length; i++){
 		var v = requestHeaders[i];
@@ -97,21 +98,25 @@ function handleMessage(request, sender, sendResponse) {
 	if (sender.url !== browser.runtime.getURL("/theme/hackbar-panel.html")) {
 		return;
 	}
+
 	var tabId = request.tabId;
 	var action = request.action;
 	switch(action){
 		case 'send_requests':
-			url = request.url;
-			method = request.method;
-			refrerrer = request.refrerrer;
-			user_agent = request.user_agent;
-			cookie = request.cookie;
+			var Data = request.data;
+			console.log(Data);
+			url = Data.url;
+			method = Data.method;
+			refrerrer = Data.refrerrer;
+			user_agent = Data.user_agent;
+			cookie = Data.cookie;
 			//content_type = request.content_type;
 			if(method == 'GET'){
 				browser.tabs.update({url: url});
 			}else{
-				var post_data = request.data;
-				browser.tabs.executeScript(tabId, {code: 'var post_data = "'+ htmlEscape(post_data) +'"; var url = "'+ encodeURIComponent(url) +'"'}, function(){
+				var post_data = JSON.stringify(Data.post_data);
+				console.log(post_data);
+				browser.tabs.executeScript(tabId, {code: 'var post_data = "'+encodeURIComponent(post_data)+'"; var url = "'+ encodeURIComponent(url) +'"'}, function(){
 					browser.tabs.executeScript(tabId, {file: 'theme/js/post_form.js'});
 				});
 			}
@@ -126,8 +131,10 @@ function handleMessage(request, sender, sendResponse) {
 			getCurrentTabUrl(sendResponse);
 			break;
 		case 'selected_text':
-			var code = 'alert( "No text was selected for this action");';
-			browser.tabs.executeScript({code: code});
+			var code = 'var user_input; user_input = prompt("Please enter some text")';
+			browser.tabs.executeScript(tabId, {code: code}, function(user_input){
+				sendResponse({user_input: user_input[0]});
+			});
 			break;
 	}
 	return true;

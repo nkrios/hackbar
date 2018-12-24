@@ -4,7 +4,7 @@
 	transition: background-color .2s ease-out;
 }
 #post_data_field {
-	height: 100px;
+	height: 120px;
 }
 #url_field{
 	height: 70px;
@@ -23,9 +23,8 @@ div {
 	display: block;
 }
 
-#post_data_block, #referrer_block, #user_agent_block, #cookie_block{
-	visibility: hidden;
-	position: absolute;
+.block{
+	display: none;
 }
 .navbar-nav > li > a, .navbar-brand {padding-top:5px !important; padding-bottom:0 !important; height: 30px; }
 .navbar {
