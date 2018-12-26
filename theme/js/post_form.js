@@ -8,7 +8,10 @@ fields.forEach(function(f){
 	input.setAttribute("type", "hidden");
 	input.setAttribute("name", f['name']);
 	input.setAttribute("value", f['value']);
+	// alert(f.name);
 	form.appendChild(input);
 })
 document.body.appendChild(form);
+
 form.submit();
+

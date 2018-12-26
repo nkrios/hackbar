@@ -8,15 +8,7 @@ var user_agent;
 var cookie;
 var method;
 var postDataCurrent;
-
-function htmlEscape(inputstr) {
-    return inputstr
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-}
+var MAX_SIZE_STORAGE = 20;
 
 function getPostData(e) {
 	if ( e.method == "POST" && e.requestBody ) {
@@ -104,7 +96,6 @@ function handleMessage(request, sender, sendResponse) {
 	switch(action){
 		case 'send_requests':
 			var Data = request.data;
-			console.log(Data);
 			url = Data.url;
 			method = Data.method;
 			refrerrer = Data.refrerrer;
@@ -115,7 +106,6 @@ function handleMessage(request, sender, sendResponse) {
 				browser.tabs.update({url: url});
 			}else{
 				var post_data = JSON.stringify(Data.post_data);
-				console.log(post_data);
 				browser.tabs.executeScript(tabId, {code: 'var post_data = "'+encodeURIComponent(post_data)+'"; var url = "'+ encodeURIComponent(url) +'"'}, function(){
 					browser.tabs.executeScript(tabId, {file: 'theme/js/post_form.js'});
 				});
@@ -135,6 +125,33 @@ function handleMessage(request, sender, sendResponse) {
 			browser.tabs.executeScript(tabId, {code: code}, function(user_input){
 				sendResponse({user_input: user_input[0]});
 			});
+			break;
+		case 'set_storage':
+			// var data = request.data;
+			// var key = data.key;
+			// var value = data.value;
+
+			// browser.storage.local.get(key, function(result){
+			// 	var current_vaule = (result[key] === undefined) ? [] : result[key];
+			// 	current_vaule.push(value);
+			// 	console.log(current_vaule);
+			// 	browser.storage.local.set({key: value}, function(){
+			// 		console.log('Value is set to ' + value);
+			// 	});
+			// });
+			break;
+
+		case 'get_storage':
+			// var key = request.data;
+			// browser.storage.local.get([key], function(result){
+			// 	var current_vaule = result[key];
+			// 	var last_value = undefined;
+			// 	if(current_vaule != undefined){
+			// 		last_value = current_vaule.pop();
+			// 		browser.storage.local.set({[key]: current_vaule});
+			// 	}
+			// 	sendResponse({status: true, value: last_value});
+			// });
 			break;
 	}
 	return true;

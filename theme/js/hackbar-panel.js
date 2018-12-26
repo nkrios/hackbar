@@ -1,6 +1,7 @@
 var _TYPE_FORM_DATA = 'application/x-www-form-urlencoded';
 var _TYPE_JSON = 'application/json';
 var _TYPE_XML = 'application/xml';
+var LOCAL_STORAGE = {'post_data_field': [], 'referer_field': [], 'user_agent_field': [], 'cookie_field': []};
 
 var urlField = $('#url_field');
 var postDataField = $('#post_data_field');
@@ -37,13 +38,24 @@ function jsonValid(text){
 	}
 }
 
+function getContentType(content_type_value){
+
+	if(content_type_value === _TYPE_XML){
+		return 'application/xml';
+	}else if(content_type_value === _TYPE_JSON){
+		return 'application/json';
+	}
+	return 'application/x-www-form-urlencoded';
+	
+}
+
 function getFieldFormData(dataString){
 	var fields = Array();
-	var item = new Object();
 	var f_split = dataString.trim().split('&');
 	for (i in f_split){
 		var f = f_split[i].match(/(^.*?)=(.*)/);
 		if(f.length == 3){
+			var item = new Object();
 			item['name'] = f[1];
 			item['value'] = unescape(f[2]);
 			fields.push(item);
@@ -92,6 +104,25 @@ function sendToBackground(action, data, response){
 	});
 }
 
+// Undo ctrlZ
+function setStorage(key, value){
+	sendToBackground('set_storage', {key: key, value: value}, function(response){});
+}
+
+function getStorage(key, result){
+	sendToBackground('get_storage', key, function(response){
+		var value = response._value;
+		result(value);
+	});
+}
+
+function undo(){
+	var key = currentFocusField.attr('id');
+	getStorage(key, function(_value){
+		currentFocusField.val(_value);
+	});
+}
+
 function loadUrl() {
 	sending = browser.runtime.sendMessage({
 		tabId: browser.devtools.inspectedWindow.tabId,
@@ -114,17 +145,6 @@ function splitUrl(){
 	uri = uri.replace(new RegExp(/\?/g), "\n?");
 	currentFocusField.val(uri);
 	return true;
-}
-
-function getContentType(content_type_value){
-
-	if(content_type_value === _TYPE_XML){
-		return 'application/xml';
-	}else if(content_type_value === _TYPE_JSON){
-		return 'application/json';
-	}
-	return 'application/x-www-form-urlencoded';
-	
 }
 
 function execute(){
@@ -197,6 +217,7 @@ function onclickMenu(action){
 		case 'md5':
 		getSelectedText(function(txt){
 			if(txt){
+				// setStorage(currentFocusField.attr('id'), currentFocusField.val());
 				newString = Encrypt.md5(txt);
 				this.setSelectedText(newString);
 			}
@@ -276,7 +297,7 @@ function onclickMenu(action){
 		case 'jsonify':
 		getSelectedText(function(txt){
 			if(txt){
-				newString = Encrypt.jsonBeautify(txt);
+				newString = jsonBeautify(txt);
 				this.setSelectedText(newString);
 			}
 		});
@@ -284,7 +305,7 @@ function onclickMenu(action){
 		case 'uppercase':
 		getSelectedText(function(txt){
 			if(txt){
-				newString = Encrypt.upperCaseString(txt);
+				newString = upperCaseString(txt);
 				this.setSelectedText(newString);
 			}
 		});
@@ -292,7 +313,7 @@ function onclickMenu(action){
 		case 'lowercase':
 		getSelectedText(function(txt){
 			if(txt){
-				newString = Encrypt.lowerCaseString(txt);
+				newString = lowerCaseString(txt);
 				this.setSelectedText(newString);
 			}
 		});
@@ -439,6 +460,16 @@ $(document).keypress(function(event){
 			break;
 			case 67: //C
 			onclickMenu('base64_decode');
+			break;
+		}
+	}
+	if('key' in event && event.ctrlKey){
+		switch(event.charCode){
+			case 0:
+				execute();
+			break
+			case 122:
+				undo();
 			break;
 		}
 	}
